@@ -1,4 +1,4 @@
-#Read("test.g");
+#Read("test (2).g");
 
 LoadPackage("EDIM");
 LoadPackage("GaussForHomalg");
@@ -116,243 +116,6 @@ return LyndonShirshovBasis(commutator(p1,p2));
 end;
 
 
-#ChangeRows:= function(M_,i_,k_) #меняю местами строки
-#local M,i,k;
-#M:= ShallowCopy(M_);
-#i:= ShallowCopy(i_);
-#k:= ShallowCopy(k_);
-#M[i]:= M_[k];
-#M[k]:= M_[i];
-#return M;
-#end;
-
-
-#ChangeColumns:= function(M_,i_,k_) #меняю местами столбцы
-#local M,i,k;
-#M:= ShallowCopy(M_);
-#i:= ShallowCopy(i_);
-#k:= ShallowCopy(k_);
-#M:= TransposedMat(ChangeRows(TransposedMat(M),i,k));
-#return M;
-#end;
-
-
-#MultRowByConst:= function(M_,i_,c_) #умножаю строку на константу
-#local M,i,c;
-#M:= ShallowCopy(M_);
-#i:= ShallowCopy(i_);
-#c:= ShallowCopy(c_);
-#M[i]:=c*M[i];
-#return M;
-#end;
-
-
-#MultColByConst:= function(M_,k_,c_) #умножаю столбец на константу
-#local M,k,c;
-#M:= ShallowCopy(M_);
-#k:= ShallowCopy(k_);
-#c:= ShallowCopy(c_);
-#M:= TransposedMat(MultRowByConst(TransposedMat(M),k,c));
-#return M;
-#end;
-
-
-#AddRowMultByConst:= function(M_,i1_,i2_,c_) #прибавляю к строке i1 #строку i2, умноженную на константу
-#local M,i1,i2,c;
-#M:= ShallowCopy(M_);
-#c:= ShallowCopy(c_);
-#i1:= ShallowCopy(i1_);
-#i2:= ShallowCopy(i2_);
-#M[i1]:=M[i1]+c*M[i2];
-#return M;
-#end;
-
-
-#AddColMultByConst:= function(M_,k1_,k2_,c_) #прибавляю к столбцу k1 #столбец k2, умноженный на константу
-#local M,k1,k2,c;
-#M:= ShallowCopy(M_);
-#c:= ShallowCopy(c_);
-#k1:= ShallowCopy(k1_);
-#k2:= ShallowCopy(k2_);
-#M:= TransposedMat(AddRowMultByConst(TransposedMat(M),k1,k2,c));
-#return M;
-#end;
-
-
-#FirstNonzeroOfMatrix:= function(M_) #первый ненулевой элемент матрицы
-#local M,i,j;
-#M:= ShallowCopy(M_);
-#i:= PositionNonZero(M);
-#if i<=Length(M) then
-#j:= PositionNonZero(M[i]);
-#return [i,j];
-#else
-#return "нулевая матрица";
-#fi;
-#end;
-
-
-
-
-
-
-#SNF1:= function(m_) # 1 шаг по строкам для нормальной формы Смитта
-#local m,l,z;
-#m:= ShallowCopy(m_);
-#if IsZero(m) then
-#return m;
-#else
-#m:= ChangeRows(m,FirstNonzeroOfMatrix(m)[1],1);
-#m:= ChangeColumns(m,FirstNonzeroOfMatrix(m)[2],1);
-#z:= PositionProperty(m[1], n -> n mod AbsInt(m[1][1])<>0);
-#	if z in [1 .. Length(m[1])] then
-#	l:= QuotientRemainder(m[1][z], m[1][1]);
-#	m:= AddColMultByConst(m,z,1,-l[1]);
-#	m:=ChangeColumns(m,1,z);
-#	fi;
-#return m;
-#fi;
-#end;
-
-
-#SNF2:= function(m_) # 2 шаг по строкам для нормальной формы Смитта #(строка -> делящаяся строка)
-#local m,l,z;
-#m:= ShallowCopy(m_);
-#if IsZero(m) then
-#return m;
-#else
-#repeat
-#m:=SNF1(m);
-#until IsZero(m[1]{[2..Length(m[1])]} mod m[1][1]);
-#return m;
-#fi;
-#end;
-
-
-#SNF3:= function(m_) # 3 шаг по строкам для нормальной формы Смитта
-#local m,l,z;
-#m:= ShallowCopy(m_);
-#if IsZero(m[1]{[2..Length(m[1])]}) then
-#return m;
-#else
-#l:= EuclideanQuotient(m[1][PositionNonZero(m[1]{[2..Length(m[1])]})+1], #m[1][1]);
-#m:= AddColMultByConst(m,PositionNonZero(m[1]{[2..Length(m[1])]})+1,1,-#l);
-#return m;
-#fi;
-#end;
-
-#SNF4:= function(m_) # 4 шаг (строка -> справа нули)
-#local m,l,z;
-#m:= ShallowCopy(m_);
-#if IsZero(m) then
-#return m;
-#else
-#repeat
-#m:=SNF3(m);
-#until IsZero(m[1]{[2..Length(m[1])]});
-#return m;
-#fi;
-#end;
-
-
-#SNF2_:= function(m_) # столбец -> делящийся столбец
-#local m,l,z;
-#m:= ShallowCopy(m_);
-#if IsZero(m) then
-#return m;
-#else
-#m:=TransposedMat(m);
-#repeat
-#m:=SNF1(m);
-#until IsZero(m[1]{[2..Length(m[1])]} mod m[1][1]);
-#m:=TransposedMat(m);
-#return m;
-#fi;
-#end;
-
-
-#SNF4_:= function(m_) # столбец -> снизу нули
-#local m,l,z;
-#m:= ShallowCopy(m_);
-#if IsZero(m) then
-#return m;
-#else
-#m:=TransposedMat(m);
-#repeat
-#m:=SNF3(m);
-#until IsZero(m[1]{[2..Length(m[1])]});
-#m:=TransposedMat(m);
-#return m;
-#fi;
-#end;
-
-
-
-
-#SNFBase0:= function(m_) # первая часть базового шага
-#local m,l,z;
-#m:= ShallowCopy(m_);
-#if IsZero(m) then
-#return m;
-#else
-#repeat
-#m:= SNF4_(SNF2_(SNF4(SNF2(m))));
-#until IsZero(m[1]{[2..Length(m[1])]});
-#return m;
-#fi;
-#end;
-
-
-#SNFBase1:= function(m_) # корректировка базового шага
-#local m,z;
-#m:= ShallowCopy(m_);
-#if IsZero(m mod m[1][1]) then
-#return m;
-#else
-#repeat
-#z:= PositionProperty(m, n -> n mod AbsInt(m[1]#[1])<>ListWithIdenticalEntries(Length(m[1]),0)); #номер первой строки с элементом, не делящимся на m[1][1]
-#m:= AddRowMultByConst(m,1,z,1);
-#m:= SNFBase0(m);
-#until IsZero(m mod m[1][1]);
-#return m;
-#fi;
-#end;
-
-
-#SNFBase:= function(m_) #базовый шаг
-#local m;
-#m:= ShallowCopy(m_);
-#m:= SNFBase1(SNFBase0(m));
-#return m;
-#end;
-
-
-#SubM:= function(m_) #вычеркиваю первый столбец и первую строку
-#local m;
-#m:= ShallowCopy(m_);
-#if Length(m[1])=1 then
-#return m;
-#elif Length(m)=1 then
-#return m;
-#else
-#m:= m{[2..Length(m)]}{[2..Length(m[1])]};
-#return m;
-#fi;
-#end;
-
-
-#SNF:= function(m_) #нормальная форма Смитта
-#local m,m1;
-#m:= List(m_, ShallowCopy);
-#m:= SNFBase(m);
-#if SubM(m)=m then
-#return m;
-#else
-#m1:= SubM(m);
-#m{[2..Length(m)]}{[2..Length(m[1])]}:= SNFBase(m1);
-#return m;
-#fi;
-#end;# не могу сделать шаг. Оказалось, в gap есть встроенная функция.
 
 
 
@@ -390,29 +153,6 @@ return "не комплекс";
 fi;
 end;
 
-
-
-#VspomFunct:= function(n_,p_)#вспомогательная функция для проверки делимости
-#local n,p,l;
-#n:=ShallowCopy(n_);
-#p:=ShallowCopy(p_);
-#l:= PrimePowersInt(n);
-#return l[PositionNthOccurrence(l,p,1)+1];
-#end;
-
-#CheckDivisibility:= function(l_,p_)#проверяю делимость
-#local l,p,k,i;
-#l:= ShallowCopy(l_);
-#p:= ShallowCopy(p_);
-#Apply(l, i->AbsInt(i));
-#Sort(l);
-#l:=l{[PositionNonZero(l)..Length(l)]};
-#l:=Filtered(l, n -> n mod p = 0 );
-#for i in [1..Length(l)] do
-#l[i]:=VspomFunct(l[i],p);
-#od;
-#return l[PositionMaximum(l)];
-#end;
 
 
 
@@ -640,13 +380,11 @@ for i in [1..Length(l)] do
 od;
 for k in [1..Length(ll)] do
 	l_k:=ll[k];
-	#for n in [1..Length(l_k[1])] do
 	if Length(l_k[2])>0 then
 	for q in [1..Length(l_k[2])] do
 	Add(l_k[1][1],l_k[2][q]);
 	od;
 	fi;
-	#od;
 	Remove(l_k,2);
 	l_k[1][1]:=Unique(l_k[1][1]);
 	l_k[1]:=Reord(l_k[1]);
@@ -988,52 +726,6 @@ fi;
 return m;
 end;
 
-
-
-
-Func2:= function(l_,ll_)
-local i,lll,l_i,j,l,ll,k;
-l:=ShallowCopy(l_);
-ll:=ShallowCopy(ll_);
-lll:=[];
-for i in [1..Length(ll)] do 
-l_i:=Func1(ll[i],5);
-for j in [1..Length(l_i)] do
-Add(lll, [[l[i]*l_i[j][1][2][1]],l_i[j][1][1]]);
-od;
-od;
-for k in [1..Length(lll)] do
-if IsZero(lll[k][1]) then
-Unbind(lll[k]);
-fi;
-od;
-return Compacted(lll);
-end;
-
-
-Sokrk_:= function(l_,k_)
-local l,i,j,ll,ll1,k,n;
-l:=ShallowCopy(l_);
-ll:=[];
-ll1:=[];
-for i in [1..Length(l)] do
-	if i<>k_ then
-	if l[i][2]=l[k_][2] then
-	Add(ll,i);
-fi;
-fi;
-od;
-for k in ll do
-Add(ll1,l[k][1][1]);
-od;
-l[k_][1][1]:=l[k_][1][1]+Sum(ll1);
-for n in ll do
-Unbind(l[n]);
-od;
-l:=Compacted(l);
-#Print([ll,ll1]);
-return l;
-end;
 
 
 
