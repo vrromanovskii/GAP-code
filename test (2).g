@@ -66,7 +66,7 @@ local n,l;
 l:=ShallowCopy(l_);
 n:=Length(l);
 if n=1 then
-return np(l);
+return NoncommutativePolynomial(l);
 else 
 return commutator(lyn_comm(StandardDecomposition(l)[1]),lyn_comm(StandardDecomposition(l)[2]));
 fi;
